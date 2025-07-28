@@ -1,0 +1,18 @@
+{
+    "accounts": [
+        {
+            "ID": "a646a0fc-df3f-4dbc-896d-9ddd82daf85e",
+            "Email": "qwe",
+            "Login": "qwe",
+            "PasswordHash": "/dsqeEMLGOIjjMame2aNDHl/Qt6vsuZykIRWyXVo1X7GKPxkm3/72HuZyYw5lZMF4qYc2QUHiTO6DT07OqQYeQ==",
+            "Salt": "kiO7CgJMI4SLAfBsUJBi7w=="
+        },
+        {
+            "ID": "e73a7164-1db2-475c-98ad-afe5fcb2f215",
+            "Email": "123",
+            "Login": "123",
+            "PasswordHash": "ZZUdsZ8YJmBdtvdGns8eZ3RUZ0e/2xf8Qc6koXlYZHZkiDOVhaeiT26j5S2G33kQmCvBCwHNUaHo1kqTbL9f7w==",
+            "Salt": "Wo/U81xUAONeDWnYLGitzQ=="
+        }
+    ]
+}

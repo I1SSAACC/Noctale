@@ -1,0 +1,14 @@
+{
+    "ID": "a646a0fc-df3f-4dbc-896d-9ddd82daf85e",
+    "Nickname": "qwe",
+    "Level": 1,
+    "Rooms": 0,
+    "Items": [],
+    "GameCurrency": 0,
+    "DonationCurrency": 0,
+    "Preferences": {
+        "MusicVolume": 0.6000000238418579,
+        "SfxVolume": 1.0,
+        "MouseSensitivity": 0.5
+    }
+}
