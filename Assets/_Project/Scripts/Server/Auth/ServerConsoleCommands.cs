@@ -7,7 +7,7 @@ public class ServerConsoleCommands : MonoBehaviour
     private const string MaintenanceOn = "maintenance on";
     private const string MaintenanceOff = "maintenance off";
 
-    private readonly ConcurrentQueue<string> commandQueue = new();
+    private readonly ConcurrentQueue<string> _commandQueue = new();
     private CustomNetworkManager _networkManager;
 
     private void Awake()
@@ -33,13 +33,13 @@ public class ServerConsoleCommands : MonoBehaviour
             string command = System.Console.ReadLine();
 
             if (string.IsNullOrEmpty(command) == false)
-                commandQueue.Enqueue(command);
+                _commandQueue.Enqueue(command);
         }
     }
 
     private void Update()
     {
-        while (commandQueue.TryDequeue(out string command))
+        while (_commandQueue.TryDequeue(out string command))
             HandleCommand(command);
     }
 
@@ -53,7 +53,7 @@ public class ServerConsoleCommands : MonoBehaviour
             Debug.Log($"Неизвестная команда: {command}");
     }
 
-    private void ExecuteMaintenanceCommand(bool enable, string successMessage)
+    private void ExecuteMaintenanceCommand(bool _, string successMessage)
     {
         if (_networkManager == null)
             return;

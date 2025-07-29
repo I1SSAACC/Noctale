@@ -12,8 +12,8 @@ public class AuthManager : MonoBehaviour
 
     private string _accountsFilePath;
     private string _playerDataDirectory;
-    private readonly Dictionary<string, NetworkConnectionToClient> loggedInAccounts = new Dictionary<string, NetworkConnectionToClient>();
-    private readonly Dictionary<NetworkConnectionToClient, string> connectionToAccount = new Dictionary<NetworkConnectionToClient, string>();
+    private readonly Dictionary<string, NetworkConnectionToClient> loggedInAccounts = new();
+    private readonly Dictionary<NetworkConnectionToClient, string> connectionToAccount = new();
     private readonly object fileLock = new object();
 
     private void Awake()
@@ -21,11 +21,13 @@ public class AuthManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
+
             if (transform.parent != null)
             {
                 Debug.LogWarning($"AuthManager: Moving to root from parent {transform.parent.name} to apply DontDestroyOnLoad");
                 transform.SetParent(null);
             }
+
             DontDestroyOnLoad(gameObject);
             Debug.Log($"AuthManager: Applied DontDestroyOnLoad to root GameObject in scene {SceneManager.GetActiveScene().name}");
             InitializePaths();
@@ -40,6 +42,7 @@ public class AuthManager : MonoBehaviour
     private void InitializePaths()
     {
         string basePath = Application.dataPath;
+
         if (string.IsNullOrEmpty(basePath))
             basePath = Directory.GetCurrentDirectory();
 
@@ -48,15 +51,15 @@ public class AuthManager : MonoBehaviour
 
         lock (fileLock)
         {
-            if (!Directory.Exists(_playerDataDirectory))
+            if (Directory.Exists(_playerDataDirectory) == false)
             {
                 Directory.CreateDirectory(_playerDataDirectory);
                 Debug.Log($"AuthManager: Created directory {_playerDataDirectory}");
             }
 
-            if (!File.Exists(_accountsFilePath))
+            if (File.Exists(_accountsFilePath) == false)
             {
-                AccountsDatabase emptyDatabase = new AccountsDatabase();
+                AccountsDatabase emptyDatabase = new();
                 string json = JsonUtility.ToJson(emptyDatabase, true);
                 File.WriteAllText(_accountsFilePath, json);
                 Debug.Log($"AuthManager: Created file {_accountsFilePath}");
@@ -83,6 +86,7 @@ public class AuthManager : MonoBehaviour
         try
         {
             AccountsDatabase database = LoadAccountsDatabase();
+
             if (database.accounts.Exists(a => a.Login == login))
             {
                 message = "Логин уже занят.";
@@ -101,7 +105,7 @@ public class AuthManager : MonoBehaviour
             string salt = Convert.ToBase64String(saltBytes);
             string passwordHash = Utils.ComputeSHA512Hash(password + salt);
 
-            AccountInfo newAccount = new AccountInfo
+            AccountInfo newAccount = new()
             {
                 ID = id,
                 Email = email,
@@ -113,7 +117,7 @@ public class AuthManager : MonoBehaviour
             database.accounts.Add(newAccount);
             SaveAccountsDatabase(database);
 
-            PlayerData newPlayerData = new PlayerData
+            PlayerData newPlayerData = new()
             {
                 ID = id,
                 Nickname = login
@@ -125,9 +129,9 @@ public class AuthManager : MonoBehaviour
             Debug.Log($"AuthManager: Успешная регистрация для логина {login}");
             return true;
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            message = $"Ошибка при регистрации: {ex.Message}";
+            message = $"Ошибка при регистрации: {exception.Message}";
             Debug.LogError(message);
             return false;
         }
@@ -163,6 +167,7 @@ public class AuthManager : MonoBehaviour
             }
 
             string passwordHash = Utils.ComputeSHA512Hash(password + account.Salt);
+
             if (account.PasswordHash != passwordHash)
             {
                 message = "Неверный пароль.";
@@ -170,6 +175,7 @@ public class AuthManager : MonoBehaviour
             }
 
             playerData = LoadPlayerData(account.ID);
+
             if (playerData == null)
             {
                 message = "Не удалось загрузить данные игрока.";
@@ -180,9 +186,9 @@ public class AuthManager : MonoBehaviour
             Debug.Log($"AuthManager: Успешная авторизация для логина {login}");
             return true;
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            message = $"Ошибка при авторизации: {ex.Message}";
+            message = $"Ошибка при авторизации: {exception.Message}";
             Debug.LogError(message);
             return false;
         }
@@ -200,7 +206,7 @@ public class AuthManager : MonoBehaviour
             catch (Exception ex)
             {
                 Debug.LogError($"Ошибка при загрузке базы данных аккаунтов: {ex.Message}");
-                return new AccountsDatabase();
+                return new();
             }
         }
     }
@@ -225,6 +231,7 @@ public class AuthManager : MonoBehaviour
     private PlayerData LoadPlayerData(string accountId)
     {
         string filePath = Path.Combine(_playerDataDirectory, accountId + Constants.JsonExtension);
+
         lock (fileLock)
         {
             try
@@ -240,9 +247,9 @@ public class AuthManager : MonoBehaviour
                     return null;
                 }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                Debug.LogError($"Ошибка при загрузке данных игрока: {ex.Message}");
+                Debug.LogError($"Ошибка при загрузке данных игрока: {exception.Message}");
                 return null;
             }
         }
@@ -251,6 +258,7 @@ public class AuthManager : MonoBehaviour
     private void SavePlayerData(PlayerData playerData)
     {
         string filePath = Path.Combine(_playerDataDirectory, playerData.ID + Constants.JsonExtension);
+
         lock (fileLock)
         {
             try
@@ -273,6 +281,7 @@ public class AuthManager : MonoBehaviour
             Debug.LogError("AuthManager: Instance is null in IsAccountLoggedIn");
             return false;
         }
+
         bool isLoggedIn = loggedInAccounts.ContainsKey(login);
         Debug.Log($"AuthManager: Checking if account {login} is logged in: {isLoggedIn}");
         return isLoggedIn;
@@ -285,6 +294,7 @@ public class AuthManager : MonoBehaviour
             Debug.Log($"AuthManager: Found connection {conn.connectionId} for login {login}");
             return conn;
         }
+
         Debug.Log($"AuthManager: No connection found for login {login}");
         return null;
     }

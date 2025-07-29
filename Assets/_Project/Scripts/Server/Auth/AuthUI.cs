@@ -31,6 +31,8 @@ public class AuthUI : MonoBehaviour
 
     private void OnDestroy()
     {
+        _loginButton.onClick.RemoveListener(OnLoginButton);
+        _registerButton.onClick.RemoveListener(OnRegisterButton);
         UnregisterAuthResponseHandler();
     }
 
@@ -69,12 +71,14 @@ public class AuthUI : MonoBehaviour
         }
 
         Debug.Log($"AuthUI: Sending login request for {_loginInputField.text}");
-        AuthRequestMessage message = new AuthRequestMessage
+
+        AuthRequestMessage message = new()
         {
-            isRegister = false,
-            login = _loginInputField.text,
-            password = _passwordInputField.text
+            IsRegister = false,
+            Login = _loginInputField.text,
+            Password = _passwordInputField.text
         };
+
         NetworkClient.Send(message);
     }
 
@@ -94,23 +98,25 @@ public class AuthUI : MonoBehaviour
 
         _registerButton.interactable = false;
         Debug.Log($"AuthUI: Sending register request for {_registerLoginInputField.text}, email={_emailInputField.text}");
-        AuthRequestMessage message = new AuthRequestMessage
+
+        AuthRequestMessage message = new()
         {
-            isRegister = true,
-            email = _emailInputField.text,
-            login = _registerLoginInputField.text,
-            password = _registerPasswordInputField.text
+            IsRegister = true,
+            Email = _emailInputField.text,
+            Login = _registerLoginInputField.text,
+            Password = _registerPasswordInputField.text
         };
+
         NetworkClient.Send(message);
     }
 
     private void OnAuthResponse(AuthResponseMessage message)
     {
-        Debug.Log($"AuthUI: Received AuthResponseMessage (isRegister={message.isRegister}, success={message.success}, message={message.message})");
+        Debug.Log($"AuthUI: Received AuthResponseMessage (isRegister={message.IsRegister}, success={message.Success}, message={message.Message})");
         _loginButton.interactable = true;
         _registerButton.interactable = true;
 
-        if (message.success && !message.isRegister)
+        if (message.Success && message.IsRegister == false)
         {
             Debug.Log("AuthUI: Login successful, hiding panels");
             _loginPanel.SetActive(false);
@@ -120,20 +126,26 @@ public class AuthUI : MonoBehaviour
 
     public void ShowLoginPanel()
     {
-        _loginInputField.text = "";
-        _passwordInputField.text = "";
+        _loginInputField.text = string.Empty;
+        _passwordInputField.text = string.Empty;
+
         _loginPanel.SetActive(true);
         _registerPanel.SetActive(false);
+
         Debug.Log("AuthUI: Showing login panel");
+        Debug.Log("Найти, откуда вызывается этот метод");
     }
 
     public void ShowRegisterPanel()
     {
-        _emailInputField.text = "";
-        _registerLoginInputField.text = "";
-        _registerPasswordInputField.text = "";
+        _emailInputField.text = string.Empty;
+        _registerLoginInputField.text = string.Empty;
+        _registerPasswordInputField.text = string.Empty;
+
         _loginPanel.SetActive(false);
         _registerPanel.SetActive(true);
+
         Debug.Log("AuthUI: Showing register panel");
+        Debug.Log("Найти, откуда вызывается этот метод");
     }
 }

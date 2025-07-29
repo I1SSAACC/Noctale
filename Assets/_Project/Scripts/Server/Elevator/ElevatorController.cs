@@ -18,6 +18,7 @@ public class ElevatorController : NetworkBehaviour
     private float _timer;
     private bool _isCounting;
 
+    // Как будто нигде не используется, попробовать убрать
     public bool IsCounting => _isCounting;
 
     private void Awake()
@@ -70,9 +71,7 @@ public class ElevatorController : NetworkBehaviour
         _remainingTime[0] = _timer;
 
         if (_timer <= 0f)
-        {
             MovePlayersToPrivateScene();
-        }
     }
 
     [Server]
@@ -100,17 +99,18 @@ public class ElevatorController : NetworkBehaviour
             return;
 
         _isCounting = false;
+
+        // Эта строчка странная, возможно CustomNetworkManager окажется пустым после приведения типов
         CustomNetworkManager networkManager = NetworkManager.singleton as CustomNetworkManager;
+
         Scene privateScene = networkManager.CreatePrivateSceneInstance();
         networkManager.MovePlayersToPrivateGameScene(_playersInElevator, privateScene, _sceneChangeHandler);
         ResetTimer();
     }
 
     [Server]
-    private void UpdateUI()
-    {
+    private void UpdateUI() =>
         RpcUpdateUI(_currentPlayerCount[0], _remainingTime[0]);
-    }
 
     [ClientRpc]
     private void RpcUpdateUI(int playerCount, float remainingTime)
@@ -123,9 +123,8 @@ public class ElevatorController : NetworkBehaviour
     {
         if (isServer == false)
             return;
-
-        NetworkIdentity playerIdentity = other.GetComponent<NetworkIdentity>();
-        if (playerIdentity != null)
+        
+        if (other.TryGetComponent(out NetworkIdentity playerIdentity))
             AddPlayer(playerIdentity);
     }
 
@@ -134,8 +133,7 @@ public class ElevatorController : NetworkBehaviour
         if (isServer == false)
             return;
 
-        NetworkIdentity playerIdentity = other.GetComponent<NetworkIdentity>();
-        if (playerIdentity != null)
+        if (other.TryGetComponent(out NetworkIdentity playerIdentity))
             RemovePlayer(playerIdentity);
     }
 }

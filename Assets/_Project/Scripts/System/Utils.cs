@@ -10,6 +10,7 @@ public static class Utils
         {
             byte[] bytes = Encoding.UTF8.GetBytes(input);
             byte[] hash = sha512.ComputeHash(bytes);
+
             return Convert.ToBase64String(hash);
         }
     }

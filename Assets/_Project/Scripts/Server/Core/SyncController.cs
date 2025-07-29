@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Mirror;
@@ -9,25 +7,25 @@ namespace StarterAssets
 {
     public class SyncController : NetworkBehaviour
     {
-        public Transform target;
+        [SerializeField] private Transform target;
 
-        void Start()
+        private void Start()
         {
             if (isLocalPlayer)
             {
-                CharacterController cc = GetComponent<CharacterController>();
-                cc.enabled = true;
+                CharacterController characterController = GetComponent<CharacterController>();
+                characterController.enabled = true;
 
-                ThirdPersonController tpc = GetComponent<ThirdPersonController>();
-                tpc.enabled = true;
+                ThirdPersonController thirdPersonController = GetComponent<ThirdPersonController>();
+                thirdPersonController.enabled = true;
 
-                PlayerInput pi = GetComponent<PlayerInput>();
-                pi.enabled = true;
+                PlayerInput playerInput = GetComponent<PlayerInput>();
+                playerInput.enabled = true;
 
-                GameObject pfc = GameObject.Find("PlayerFollowCamera");
+                GameObject playerFollowCamera = GameObject.Find("PlayerFollowCamera");
 
-                CinemachineVirtualCamera cvc = pfc.GetComponent<CinemachineVirtualCamera>();
-                cvc.Follow = target;
+                CinemachineVirtualCamera camera = playerFollowCamera.GetComponent<CinemachineVirtualCamera>();
+                camera.Follow = target;
             }
         }
     }

@@ -1,0 +1,14 @@
+{
+    "ID": "9224d83b-51cb-4617-b89c-5ff1eeb28e1a",
+    "Nickname": "12",
+    "Level": 1,
+    "Rooms": 0,
+    "Items": [],
+    "GameCurrency": 0,
+    "DonationCurrency": 0,
+    "Preferences": {
+        "MusicVolume": 0.6000000238418579,
+        "SfxVolume": 1.0,
+        "MouseSensitivity": 0.5
+    }
+}

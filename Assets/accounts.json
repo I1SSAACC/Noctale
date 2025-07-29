@@ -13,6 +13,13 @@
             "Login": "123",
             "PasswordHash": "ZZUdsZ8YJmBdtvdGns8eZ3RUZ0e/2xf8Qc6koXlYZHZkiDOVhaeiT26j5S2G33kQmCvBCwHNUaHo1kqTbL9f7w==",
             "Salt": "Wo/U81xUAONeDWnYLGitzQ=="
+        },
+        {
+            "ID": "9224d83b-51cb-4617-b89c-5ff1eeb28e1a",
+            "Email": "12",
+            "Login": "12",
+            "PasswordHash": "wyWJiSmQDqhDYuqUvYmmo+gdr6xLHMq/J3Q5g4p9jeCKtPAYiTC2vNsSC2DhCxc8BrPrkpJnQ/2SMg6h9671OA==",
+            "Salt": "KKhpWyjbJEGnfxKDz/mx9A=="
         }
     ]
 }

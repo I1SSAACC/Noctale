@@ -3,22 +3,14 @@ using UnityEngine.SceneManagement;
 using Mirror;
 using System.Collections.Generic;
 
-public static class GameConstants
-{
-    public const string GameSceneName = "Game";
-    public const string LobbySceneName = "Lobby";
-    public const int GameSceneBuildIndex = 2;
-    public const int LobbySceneBuildIndex = 1;
-    public const float ElevatorWaitTime = 15f;
-    public const int MaxPlayersInElevator = 2;
-}
-
 public class CustomNetworkManager : NetworkManager
 {
     [SerializeField] private SceneInterestManagement _sceneInterestManagement;
     [SerializeField] private GameObject _gamePrefab;
+    
     private static readonly List<Scene> s_activePrivateScenes = new();
 
+    // Вроде как нигде не используется, попробовать убрать
     public IReadOnlyList<Scene> ActivePrivateScenes => s_activePrivateScenes;
 
     private new void Awake()
@@ -63,20 +55,21 @@ public class CustomNetworkManager : NetworkManager
     public Scene CreatePrivateSceneInstance()
     {
         string instanceId = System.Guid.NewGuid().ToString();
-        Scene privateScene = SceneManager.CreateScene($"Game_{instanceId}",
-            new CreateSceneParameters(LocalPhysicsMode.Physics3D));
+        Scene privateScene = SceneManager.CreateScene($"Game_{instanceId}", new(LocalPhysicsMode.Physics3D));
 
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(GameConstants.GameSceneBuildIndex, LoadSceneMode.Additive);
+
         asyncLoad.completed += operation =>
         {
             Scene loadedScene = SceneManager.GetSceneByBuildIndex(GameConstants.GameSceneBuildIndex);
+
             if (loadedScene.IsValid())
             {
                 GameObject[] rootObjects = loadedScene.GetRootGameObjects();
+
                 foreach (GameObject obj in rootObjects)
-                {
                     SceneManager.MoveGameObjectToScene(obj, privateScene);
-                }
+
                 SceneManager.UnloadSceneAsync(GameConstants.GameSceneBuildIndex);
             }
         };

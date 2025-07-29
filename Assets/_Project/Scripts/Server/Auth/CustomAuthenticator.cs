@@ -3,63 +3,68 @@ using UnityEngine;
 
 public class CustomAuthenticator : NetworkAuthenticator
 {
-    public override void OnStartServer()
-    {
+    public override void OnStartServer() =>
         NetworkServer.RegisterHandler<AuthRequestMessage>(OnAuthRequestMessage, false);
-    }
 
-    public override void OnStartClient()
-    {
+    public override void OnStartClient() =>
         NetworkClient.RegisterHandler<AuthResponseMessage>(OnAuthResponseMessage, false);
-    }
 
     public override void OnServerAuthenticate(NetworkConnectionToClient conn) { }
 
     private void OnAuthRequestMessage(NetworkConnectionToClient conn, AuthRequestMessage msg)
     {
-        if (!msg.isRegister && AuthManager.Instance.IsAccountLoggedIn(msg.login))
+        if (msg.IsRegister == false && AuthManager.Instance.IsAccountLoggedIn(msg.Login))
         {
-            conn.Send(new AuthResponseMessage
+            AuthResponseMessage responseMessage = new()
             {
-                isRegister = false,
-                success = false,
-                message = "Аккаунт уже активен в другой сессии."
-            });
+                IsRegister = false,
+                Success = false,
+                Message = "Аккаунт уже активен в другой сессии."
+            };
+
+            conn.Send(responseMessage);
+
             return;
         }
 
-        if (msg.isRegister)
+        if (msg.IsRegister)
         {
             bool ok = AuthManager.Instance.Register(
-                msg.email, msg.login, msg.password,
-                out string regMessage
-            );
+                msg.Email,
+                msg.Login,
+                msg.Password,
+                out string regMessage);
 
-            conn.Send(new AuthResponseMessage
+            AuthResponseMessage responseMessage = new()
             {
-                isRegister = true,
-                success = ok,
-                message = regMessage
-            });
+                IsRegister = true,
+                Success = ok,
+                Message = regMessage
+            };
+
+            conn.Send(responseMessage);
 
         }
         else
         {
             bool ok = AuthManager.Instance.Login(
-                msg.login, msg.password,
-                out _, out string loginMessage
-            );
+                msg.Login, 
+                msg.Password,
+                out _, 
+                out string loginMessage);
 
-            conn.Send(new AuthResponseMessage
+            AuthResponseMessage responseMessage = new()
             {
-                isRegister = false,
-                success = ok,
-                message = loginMessage
-            });
+                IsRegister = false,
+                Success = ok,
+                Message = loginMessage
+            };
+
+            conn.Send(responseMessage);
 
             if (ok)
             {
-                AuthManager.Instance.AssociateConnectionWithAccount(conn, msg.login);
+                AuthManager.Instance.AssociateConnectionWithAccount(conn, msg.Login);
                 ServerAccept(conn);
             }
         }
@@ -67,9 +72,9 @@ public class CustomAuthenticator : NetworkAuthenticator
 
     private void OnAuthResponseMessage(AuthResponseMessage msg)
     {
-        Debug.Log($"[Auth] {msg.message}");
+        Debug.Log($"[Auth] {msg.Message}");
 
-        if (!msg.isRegister && msg.success)
+        if (msg.IsRegister == false && msg.Success)
             ClientAccept();
     }
 }
