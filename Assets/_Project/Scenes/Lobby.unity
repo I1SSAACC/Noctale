@@ -1305,8 +1305,9 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  _playersText: {fileID: 1578320913}
   _timerText: {fileID: 508565679}
+  _playerCountText: {fileID: 1578320913}
+  _elevatorCollider: {fileID: 1062031776}
 --- !u!54 &1062031779
 Rigidbody:
   m_ObjectHideFlags: 0
