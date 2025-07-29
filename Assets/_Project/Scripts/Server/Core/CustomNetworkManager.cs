@@ -2,88 +2,131 @@
 using UnityEngine.SceneManagement;
 using Mirror;
 using System.Collections.Generic;
+using System.Collections;
 
 public class CustomNetworkManager : NetworkManager
 {
-    [SerializeField] private SceneInterestManagement _sceneInterestManagement;
-    [SerializeField] private GameObject _gamePrefab;
-    
-    private static readonly List<Scene> s_activePrivateScenes = new();
+    public const string GameSceneName = "Game";
 
-    // Вроде как нигде не используется, попробовать убрать
-    public IReadOnlyList<Scene> ActivePrivateScenes => s_activePrivateScenes;
+    [SerializeField] private GameObject _playerPrefab;
 
-    private new void Awake()
+    private static readonly Dictionary<uint, List<NetworkConnectionToClient>> s_playerGroups = new();
+    private static uint s_nextGroupId = 1;
+
+    private void Awake()
     {
-        if (_sceneInterestManagement == null)
-            _sceneInterestManagement = GetComponent<SceneInterestManagement>();
-
-        if (_gamePrefab == null)
-            Debug.LogError("Game prefab is not assigned in CustomNetworkManager.");
+        if (_playerPrefab == null)
+            Debug.LogError("Player prefab not assigned in CustomNetworkManager.");
     }
 
     [Server]
-    public void MovePlayersToPrivateGameScene(List<NetworkIdentity> players, Scene privateScene, SceneChangeHandler sceneChangeHandler)
+    public void MovePlayersToGameScene(List<NetworkIdentity> players)
     {
         if (players.Count == 0)
             return;
 
-        if (privateScene.IsValid() == false)
+        uint groupId = s_nextGroupId++;
+        List<NetworkConnectionToClient> connections = new();
+        s_playerGroups[groupId] = connections;
+
+        StartCoroutine(MovePlayersCoroutine(players, groupId, connections));
+    }
+
+    [Server]
+    private IEnumerator MovePlayersCoroutine(List<NetworkIdentity> players, uint groupId, List<NetworkConnectionToClient> connections)
+    {
+        Scene gameScene = SceneManager.GetSceneByName(GameSceneName);
+        if (gameScene.IsValid() == false)
         {
-            Debug.LogError("Invalid private scene provided.");
-            return;
+            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(GameSceneName, LoadSceneMode.Additive);
+            yield return asyncLoad;
+            gameScene = SceneManager.GetSceneByName(GameSceneName);
+            if (gameScene.IsValid() == false)
+            {
+                Debug.LogError($"Failed to load scene {GameSceneName}.");
+                yield break;
+            }
         }
 
-        s_activePrivateScenes.Add(privateScene);
-
+        // Сохраняем соединения игроков группы
         foreach (NetworkIdentity oldPlayer in players)
         {
             if (oldPlayer == null || oldPlayer.connectionToClient == null)
                 continue;
 
             NetworkConnectionToClient connection = oldPlayer.connectionToClient;
+            connections.Add(connection);
+        }
+
+        // Уведомляем клиентов и переносим игроков
+        foreach (NetworkIdentity oldPlayer in players)
+        {
+            if (oldPlayer == null || oldPlayer.connectionToClient == null)
+                continue;
+
+            NetworkConnectionToClient connection = oldPlayer.connectionToClient;
+
+            // Уведомляем клиента о загрузке сцены Game через SceneChangeHandler
+            SceneChangeHandler sceneChangeHandler = oldPlayer.GetComponent<SceneChangeHandler>();
+            if (sceneChangeHandler == null)
+            {
+                Debug.LogError($"SceneChangeHandler not found on player {oldPlayer.name}.");
+                continue;
+            }
+            sceneChangeHandler.NotifyClientOfSceneChange(connection, GameSceneName);
+
+            // Даем время клиенту начать загрузку
+            yield return new WaitForSeconds(0.1f);
+
+            // Уничтожаем старый объект игрока
             NetworkServer.Destroy(oldPlayer.gameObject);
 
-            GameObject newPlayer = Instantiate(_gamePrefab, Vector3.zero, Quaternion.identity);
-            SceneManager.MoveGameObjectToScene(newPlayer, privateScene);
+            // Создаем новый объект игрока в сцене Game
+            GameObject newPlayer = Instantiate(_playerPrefab, Vector3.zero, Quaternion.identity);
+            SceneManager.MoveGameObjectToScene(newPlayer, gameScene);
+
+            NetworkIdentity newPlayerIdentity = newPlayer.GetComponent<NetworkIdentity>();
+            if (newPlayerIdentity == null)
+            {
+                Debug.LogError($"NetworkIdentity not found on new player {newPlayer.name}.");
+                Destroy(newPlayer);
+                continue;
+            }
+
+            // Спавним игрока только для его соединения
             NetworkServer.Spawn(newPlayer, connection);
-            sceneChangeHandler.NotifyClientOfSceneChange(connection, privateScene.name);
+
+            // Устанавливаем клиента готовым
+            NetworkServer.SetClientReady(connection);
+        }
+
+        // Спавним объекты сцены Game для всех соединений группы
+        foreach (GameObject sceneObject in gameScene.GetRootGameObjects())
+        {
+            NetworkIdentity sceneIdentity = sceneObject.GetComponent<NetworkIdentity>();
+            if (sceneIdentity == null)
+                continue;
+
+            foreach (NetworkConnectionToClient conn in connections)
+            {
+                if (conn.isReady)
+                    NetworkServer.Spawn(sceneObject, conn);
+            }
         }
     }
 
     [Server]
-    public Scene CreatePrivateSceneInstance()
+    public void RemovePlayerGroup(uint groupId)
     {
-        string instanceId = System.Guid.NewGuid().ToString();
-        Scene privateScene = SceneManager.CreateScene($"Game_{instanceId}", new(LocalPhysicsMode.Physics3D));
-
-        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(GameConstants.GameSceneBuildIndex, LoadSceneMode.Additive);
-
-        asyncLoad.completed += operation =>
-        {
-            Scene loadedScene = SceneManager.GetSceneByBuildIndex(GameConstants.GameSceneBuildIndex);
-
-            if (loadedScene.IsValid())
-            {
-                GameObject[] rootObjects = loadedScene.GetRootGameObjects();
-
-                foreach (GameObject obj in rootObjects)
-                    SceneManager.MoveGameObjectToScene(obj, privateScene);
-
-                SceneManager.UnloadSceneAsync(GameConstants.GameSceneBuildIndex);
-            }
-        };
-
-        return privateScene;
-    }
-
-    [Server]
-    public void UnregisterPrivateScene(Scene privateScene)
-    {
-        if (privateScene.IsValid() == false)
+        if (s_playerGroups.ContainsKey(groupId) == false)
             return;
 
-        s_activePrivateScenes.Remove(privateScene);
-        SceneManager.UnloadSceneAsync(privateScene);
+        foreach (NetworkConnectionToClient conn in s_playerGroups[groupId])
+        {
+            if (conn.identity != null)
+                NetworkServer.Destroy(conn.identity.gameObject);
+        }
+
+        s_playerGroups.Remove(groupId);
     }
 }

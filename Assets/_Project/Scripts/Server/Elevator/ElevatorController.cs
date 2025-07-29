@@ -1,131 +1,78 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Mirror;
-using System.Collections.Generic;
 using TMPro;
+using System.Collections.Generic;
 
 public class ElevatorController : NetworkBehaviour
 {
-    [SerializeField] private TextMeshProUGUI _playersCountText;
-    [SerializeField] private TextMeshProUGUI _timerText;
-    [SerializeField] private SceneChangeHandler _sceneChangeHandler;
-    [SerializeField] private float _waitTime = GameConstants.ElevatorWaitTime;
-    [SerializeField] private int _maxPlayers = GameConstants.MaxPlayersInElevator;
+    private const float TimerDuration = 15f;
+    private const int MaxPlayers = 2;
+    private const float DecimalTimerThreshold = 5f;
+    private const string PlayersTextFormat = "{0}/{1}";
+    private const string TimerIntegerFormat = "{0}s";
+    private const string TimerDecimalFormat = "{0:F1}s";
+
+    [SerializeField] private TextMeshPro _playersText;
+    [SerializeField] private TextMeshPro _timerText;
 
     private readonly List<NetworkIdentity> _playersInElevator = new();
-    private readonly SyncList<float> _remainingTime = new();
-    private readonly SyncList<int> _currentPlayerCount = new();
-    private float _timer;
-    private bool _isCounting;
+    private float _timer = TimerDuration;
 
-    // Как будто нигде не используется, попробовать убрать
-    public bool IsCounting => _isCounting;
+    [SyncVar(hook = nameof(OnPlayersTextChanged))]
+    private string _playersDisplayText = string.Empty;
+
+    [SyncVar(hook = nameof(OnTimerTextChanged))]
+    private string _timerDisplayText = string.Empty;
 
     private void Awake()
     {
-        if (_playersCountText == null || _timerText == null)
-            Debug.LogError("TextMeshPro components not assigned in ElevatorController.");
-        if (_sceneChangeHandler == null)
-            Debug.LogError("SceneChangeHandler component not assigned in ElevatorController.");
+        if (_playersText == null)
+            Debug.LogError("PlayersText not assigned in ElevatorController.");
+
+        if (_timerText == null)
+            Debug.LogError("TimerText not assigned in ElevatorController.");
+
+        UpdatePlayersText();
+        UpdateTimerText();
     }
 
-    [Server]
-    private void Start()
-    {
-        _remainingTime.Add(_waitTime);
-        _currentPlayerCount.Add(0);
-        StartTimer();
-    }
-
-    [Server]
-    public void AddPlayer(NetworkIdentity player)
-    {
-        if (_playersInElevator.Contains(player) == false)
-        {
-            _playersInElevator.Add(player);
-            _currentPlayerCount[0] = _playersInElevator.Count;
-            UpdateUI();
-        }
-
-        if (_playersInElevator.Count >= _maxPlayers)
-            MovePlayersToPrivateScene();
-    }
-
-    [Server]
-    public void RemovePlayer(NetworkIdentity player)
-    {
-        if (_playersInElevator.Remove(player))
-        {
-            _currentPlayerCount[0] = _playersInElevator.Count;
-            UpdateUI();
-        }
-    }
-
-    [Server]
     private void Update()
     {
-        if (_isCounting == false)
+        if (isServer == false)
             return;
+
+        if (_playersInElevator.Count == 0)
+        {
+            UpdatePlayersText();
+            UpdateTimerText();
+            return;
+        }
 
         _timer -= Time.deltaTime;
-        _remainingTime[0] = _timer;
+        UpdatePlayersText();
+        UpdateTimerText();
 
-        if (_timer <= 0f)
-            MovePlayersToPrivateScene();
-    }
-
-    [Server]
-    private void StartTimer()
-    {
-        _timer = _waitTime;
-        _isCounting = true;
-    }
-
-    [Server]
-    private void ResetTimer()
-    {
-        _playersInElevator.Clear();
-        _currentPlayerCount[0] = 0;
-        _remainingTime[0] = _waitTime;
-        _timer = _waitTime;
-        _isCounting = true;
-        UpdateUI();
-    }
-
-    [Server]
-    private void MovePlayersToPrivateScene()
-    {
-        if (_playersInElevator.Count == 0)
-            return;
-
-        _isCounting = false;
-
-        // Эта строчка странная, возможно CustomNetworkManager окажется пустым после приведения типов
-        CustomNetworkManager networkManager = NetworkManager.singleton as CustomNetworkManager;
-
-        Scene privateScene = networkManager.CreatePrivateSceneInstance();
-        networkManager.MovePlayersToPrivateGameScene(_playersInElevator, privateScene, _sceneChangeHandler);
-        ResetTimer();
-    }
-
-    [Server]
-    private void UpdateUI() =>
-        RpcUpdateUI(_currentPlayerCount[0], _remainingTime[0]);
-
-    [ClientRpc]
-    private void RpcUpdateUI(int playerCount, float remainingTime)
-    {
-        _playersCountText.text = $"{playerCount}/{_maxPlayers}";
-        _timerText.text = $"{Mathf.CeilToInt(remainingTime)}s";
+        if (_timer <= 0)
+        {
+            TransferPlayers();
+            ResetElevator();
+        }
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (isServer == false)
             return;
-        
-        if (other.TryGetComponent(out NetworkIdentity playerIdentity))
-            AddPlayer(playerIdentity);
+
+        NetworkIdentity playerIdentity = other.GetComponent<NetworkIdentity>();
+        if (playerIdentity == null)
+            return;
+
+        if (_playersInElevator.Contains(playerIdentity) == false && _playersInElevator.Count < MaxPlayers)
+        {
+            _playersInElevator.Add(playerIdentity);
+            UpdatePlayersText();
+        }
     }
 
     private void OnTriggerExit(Collider other)
@@ -133,7 +80,63 @@ public class ElevatorController : NetworkBehaviour
         if (isServer == false)
             return;
 
-        if (other.TryGetComponent(out NetworkIdentity playerIdentity))
-            RemovePlayer(playerIdentity);
+        NetworkIdentity playerIdentity = other.GetComponent<NetworkIdentity>();
+        if (playerIdentity == null)
+            return;
+
+        _playersInElevator.Remove(playerIdentity);
+        UpdatePlayersText();
+    }
+
+    [Server]
+    private void UpdatePlayersText()
+    {
+        _playersDisplayText = string.Format(PlayersTextFormat, _playersInElevator.Count, MaxPlayers);
+    }
+
+    [Server]
+    private void UpdateTimerText()
+    {
+        if (_timer > DecimalTimerThreshold)
+            _timerDisplayText = string.Format(TimerIntegerFormat, Mathf.FloorToInt(_timer));
+        else
+            _timerDisplayText = string.Format(TimerDecimalFormat, _timer);
+    }
+
+    [Server]
+    private void TransferPlayers()
+    {
+        if (_playersInElevator.Count == 0)
+            return;
+
+        CustomNetworkManager networkManager = NetworkManager.singleton as CustomNetworkManager;
+        if (networkManager == null)
+        {
+            Debug.LogError("CustomNetworkManager singleton not found.");
+            return;
+        }
+
+        networkManager.MovePlayersToGameScene(_playersInElevator);
+    }
+
+    [Server]
+    private void ResetElevator()
+    {
+        _playersInElevator.Clear();
+        _timer = TimerDuration;
+        UpdatePlayersText();
+        UpdateTimerText();
+    }
+
+    private void OnPlayersTextChanged(string _, string newText)
+    {
+        if (_playersText != null)
+            _playersText.text = newText;
+    }
+
+    private void OnTimerTextChanged(string _, string newText)
+    {
+        if (_timerText != null)
+            _timerText.text = newText;
     }
 }
