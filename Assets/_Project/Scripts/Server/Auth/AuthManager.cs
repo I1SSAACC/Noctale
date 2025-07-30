@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class AuthManager : MonoBehaviour
 {
@@ -14,29 +13,18 @@ public class AuthManager : MonoBehaviour
     private string _playerDataDirectory;
     private readonly Dictionary<string, NetworkConnectionToClient> loggedInAccounts = new();
     private readonly Dictionary<NetworkConnectionToClient, string> connectionToAccount = new();
-    private readonly object fileLock = new object();
+    private readonly object fileLock = new();
 
     private void Awake()
     {
-        if (Instance == null)
+        if (Instance != null)
         {
-            Instance = this;
-
-            if (transform.parent != null)
-            {
-                Debug.LogWarning($"AuthManager: Moving to root from parent {transform.parent.name} to apply DontDestroyOnLoad");
-                transform.SetParent(null);
-            }
-
-            DontDestroyOnLoad(gameObject);
-            Debug.Log($"AuthManager: Applied DontDestroyOnLoad to root GameObject in scene {SceneManager.GetActiveScene().name}");
-            InitializePaths();
-        }
-        else
-        {
-            Debug.LogWarning($"AuthManager: Another instance already exists in scene {SceneManager.GetActiveScene().name}, destroying this one");
             Destroy(gameObject);
+            return;
         }
+
+        Instance = this;
+        InitializePaths();
     }
 
     private void InitializePaths()

@@ -1,7 +1,3 @@
-﻿using UnityEngine;
-using Mirror;
+﻿using Mirror;
 
-public class CustomNetworkManager : NetworkManager
-{
-    [SerializeField] private GameObject _playerPrefab;
-}
+public class CustomNetworkManager : NetworkManager { }

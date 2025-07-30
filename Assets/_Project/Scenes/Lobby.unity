@@ -358,7 +358,7 @@ GameObject:
   - component: {fileID: 508565679}
   - component: {fileID: 508565681}
   m_Layer: 0
-  m_Name: Timer
+  m_Name: TimerText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -956,6 +956,7 @@ GameObject:
   - component: {fileID: 893136917}
   - component: {fileID: 893136921}
   - component: {fileID: 893136920}
+  - component: {fileID: 893136922}
   m_Layer: 0
   m_Name: Info
   m_TagString: Untagged
@@ -975,8 +976,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1578320912}
   - {fileID: 508565678}
+  - {fileID: 1578320912}
   m_Father: {fileID: 1062031775}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -1123,6 +1124,20 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &893136922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 893136916}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba1cd84b68facd44085209df987907a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _timerText: {fileID: 508565679}
+  _playerCountText: {fileID: 1578320913}
 --- !u!1 &1027626794
 GameObject:
   m_ObjectHideFlags: 0
@@ -1305,9 +1320,10 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  _timerText: {fileID: 508565679}
-  _playerCountText: {fileID: 1578320913}
+  _maxPlayers: 2
   _elevatorCollider: {fileID: 1062031776}
+  _view: {fileID: 893136922}
+  _playerPrefab: {fileID: 4962278672091647657, guid: b5bcd97b59106834380e97952b7854a1, type: 3}
 --- !u!54 &1062031779
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1668,7 +1684,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 8300000, guid: c811d47e8e2d25440af75007bc4b7b61, type: 3}
   m_Resource: {fileID: 8300000, guid: c811d47e8e2d25440af75007bc4b7b61, type: 3}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 0.6
   m_Pitch: 1
   Loop: 1
@@ -1874,7 +1890,7 @@ GameObject:
   - component: {fileID: 1578320913}
   - component: {fileID: 1578320915}
   m_Layer: 0
-  m_Name: CounterPlayers
+  m_Name: PlayerCountText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
