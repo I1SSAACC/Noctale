@@ -3,16 +3,26 @@ using UnityEngine;
 
 public class ElevatorView : MonoBehaviour
 {
-    private const float DecimalTimerThreshold = 5f;
-
     [SerializeField] private TextMeshPro _timerText;
     [SerializeField] private TextMeshPro _playerCountText;
 
     public void SetElapsedTime(float timeLeft)
     {
-        if (timeLeft <= DecimalTimerThreshold)
+        if (_timerText == null)
+        {
+            Debug.LogError("TimerText is not assigned in ElevatorView.");
+            return;
+        }
+
+        if (timeLeft < 0f)
+        {
+            _timerText.text = "0s";
+            return;
+        }
+
+        if (timeLeft <= ElevatorConstants.DecimalTimerThreshold)
             _timerText.text = timeLeft.ToString("F1") + "s";
-        else 
+        else
             _timerText.text = Mathf.CeilToInt(timeLeft).ToString() + "s";
     }
 
