@@ -99,8 +99,7 @@ public class ElevatorTransfer : NetworkBehaviour
         while (!asyncLoad.isDone)
             yield return null;
 
-        //Scene clientLoaded = SceneManager.GetSceneByName(msg.sceneName);
-        Scene clientLoaded = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
+        Scene clientLoaded = SceneManager.GetSceneByName(msg.sceneName);
 
         if (clientLoaded.IsValid() && clientLoaded.isLoaded)
         {
@@ -130,5 +129,5 @@ public class ElevatorTransfer : NetworkBehaviour
         );
 
         NetworkServer.Destroy(oldPlayer);
-    }    
+    }
 }
