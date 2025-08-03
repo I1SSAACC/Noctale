@@ -14,6 +14,7 @@ public class InputReader
     private const KeyCode KeyLamp = KeyCode.F;
 
     private readonly InputEvents _events = new();
+    private bool _isJumpKeyPressed;
 
     public InputEvents Events => _events;
 
@@ -71,8 +72,14 @@ public class InputReader
 
     private void ReadJump()
     {
-        if (Input.GetKeyDown(KeyJump))
+        if (Input.GetKeyDown(KeyJump) && _isJumpKeyPressed == false)
+        {
+            _isJumpKeyPressed = true;
             _events.JumpPressed?.Invoke();
+        }
+
+        if (Input.GetKeyUp(KeyJump))
+            _isJumpKeyPressed = false;
     }
 
     private void ReadInteract()

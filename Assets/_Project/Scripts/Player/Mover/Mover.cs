@@ -15,6 +15,9 @@ public class Mover
         _gravity.Init(_characterController);
     }
 
+    public bool IsGrounded =>
+    _characterController.isGrounded;
+
     public void Move(MovementInput input)
     {
         Vector3 localDirection = new(input.Horizontal * _speed, _gravity.GetUpdateVelocity(), input.Vertical * _speed);

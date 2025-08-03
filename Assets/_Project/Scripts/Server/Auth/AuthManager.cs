@@ -262,6 +262,36 @@ public class AuthManager : MonoBehaviour
         }
     }
 
+    public bool TryGetPlayerDataByLogin(string login, out PlayerData playerData)
+    {
+        playerData = null;
+
+        if (Instance == null)
+        {
+            Debug.LogError("AuthManager: Instance is null in TryGetPlayerDataByLogin");
+            return false;
+        }
+
+        AccountsDatabase database = LoadAccountsDatabase();
+        AccountInfo account = database.accounts.Find(a => a.Login == login);
+
+        if (account == null)
+        {
+            Debug.LogWarning($"AuthManager: Account with login {login} not found");
+            return false;
+        }
+
+        playerData = LoadPlayerData(account.ID);
+
+        if (playerData == null)
+        {
+            Debug.LogWarning($"AuthManager: Failed to load player data for login {login}");
+            return false;
+        }
+
+        return true;
+    }
+
     public bool IsAccountLoggedIn(string login)
     {
         if (Instance == null)

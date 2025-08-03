@@ -11,12 +11,15 @@ public class Player : MonoBehaviour
     private bool _isCrouch;
 
     private void Awake()
-    {
+    {;
         _mover.Init(this);
         _rotator.Init(this);
         _jumper.Init(_mover);
         _inputReader.Init(this);
     }
+
+    private void Update() =>
+        _jumper.ResetJumpState(_mover.IsGrounded);
 
     private void OnEnable()
     {
@@ -24,7 +27,7 @@ public class Player : MonoBehaviour
         events.MovementPressed += OnMovePressed;
         events.RotationPressed += OnRotatePressed;
         events.CrouchToggled += OnCrouchToggled;
-        events.JumpPressed += _jumper.Jump;
+        events.JumpPressed += OnJumpPressed;
         events.InteractPressed += OnInteractPressed;
         events.LampPressed += OnLampPressed;
     }
@@ -50,7 +53,7 @@ public class Player : MonoBehaviour
     {
         if (_inputReader.IsMovement())
         {
-            if(isPressed)
+            if (isPressed)
                 Debug.Log("Ride pressed");
             else
                 Debug.Log("Ride unpressed");
@@ -58,7 +61,7 @@ public class Player : MonoBehaviour
             return;
         }
 
-        if(_isCrouch && isPressed == false)
+        if (_isCrouch && isPressed == false)
             Debug.Log("Ride unpressed");
 
         _isCrouch = isPressed;
@@ -69,8 +72,15 @@ public class Player : MonoBehaviour
             Debug.Log("Crouch unpressed");
     }
 
-    private void OnJumpPressed() =>
+    private void OnJumpPressed()
+    {
+        Debug.Log($"Попытка прыжка, IsGrounded: {_mover.IsGrounded}");
+        if (_mover.IsGrounded == false)
+            return;
+
         _jumper.Jump();
+    }
+
 
     private void OnInteractPressed() =>
         Debug.Log("Interact pressed");
